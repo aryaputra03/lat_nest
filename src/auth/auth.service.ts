@@ -58,7 +58,47 @@ export class AuthService {
       throw new UnauthorizedException('Email atau password salah');
     }
 
-    return this.issueTokenPair(user.id, user.email);
+    const tokenPair = await this.issueTokenPair(user.id, user.email);
+    await this.storeRefreshTokenHash(user.id, tokenPair.refreshToken);
+
+    return tokenPair;
+  }
+
+  async refresh(userId: string, rawRefreshToken: string): Promise<TokenPair> {
+    const user = await this.usersService.findById(userId);
+
+    if (!user || !user.refreshTokenHash) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const isTokenValid = await argon2.verify(
+      user.refreshTokenHash,
+      rawRefreshToken,
+    );
+
+    if (!isTokenValid) {
+      // Indikasi token lama dipakai ulang atau dicuri: paksa login ulang.
+      await this.usersService.updateRefreshTokenHash(user.id, null);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokenPair = await this.issueTokenPair(user.id, user.email);
+    await this.storeRefreshTokenHash(user.id, tokenPair.refreshToken);
+
+    return tokenPair;
+  }
+
+  async logout(userId: string): Promise<{ message: string }> {
+    await this.usersService.updateRefreshTokenHash(userId, null);
+    return { message: 'Logout berhasil' };
+  }
+
+  private async storeRefreshTokenHash(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    const refreshTokenHash = await argon2.hash(refreshToken);
+    await this.usersService.updateRefreshTokenHash(userId, refreshTokenHash);
   }
 
   private async issueTokenPair(
