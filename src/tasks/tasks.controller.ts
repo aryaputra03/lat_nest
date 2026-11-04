@@ -9,9 +9,11 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { QueryTasksDto } from './dto/query-tasks.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TasksService } from './tasks.service';
 
@@ -20,16 +22,16 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Post()
-  create(
-    @CurrentUser() user: { sub: string },
-    @Body() dto: CreateTaskDto,
-  ) {
+  create(@CurrentUser() user: { sub: string }, @Body() dto: CreateTaskDto) {
     return this.tasksService.create(user.sub, dto);
   }
 
   @Get()
-  findAll(@CurrentUser() user: { sub: string }) {
-    return this.tasksService.findAll(user.sub);
+  findAll(
+    @CurrentUser() user: { sub: string },
+    @Query() query: QueryTasksDto,
+  ) {
+    return this.tasksService.findAll(user.sub, query);
   }
 
   @Get(':id')

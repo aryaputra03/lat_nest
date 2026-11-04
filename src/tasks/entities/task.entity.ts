@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -22,6 +23,7 @@ export enum TaskPriority {
 }
 
 @Entity('tasks')
+@Index(['userId', 'status'])
 export class Task {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -50,6 +52,7 @@ export class Task {
   dueDate: Date | null;
 
   @Column({ name: 'user_id', type: 'uuid' })
+  @Index()
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

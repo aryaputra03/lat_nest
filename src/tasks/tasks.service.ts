@@ -2,8 +2,19 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateTaskDto } from './dto/create-task.dto';
+import { QueryTasksDto } from './dto/query-tasks.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { Task } from './entities/task.entity';
+
+export interface PaginatedTasks {
+  data: Task[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
 
 @Injectable()
 export class TasksService {
@@ -20,8 +31,42 @@ export class TasksService {
     return this.tasksRepository.save(task);
   }
 
-  async findAll(userId: string): Promise<Task[]> {
-    return this.tasksRepository.find({ where: { userId } });
+  async findAll(
+    userId: string,
+    query: QueryTasksDto,
+  ): Promise<PaginatedTasks> {
+    const { page, limit, status, priority, search, sortBy, order } = query;
+
+    const qb = this.tasksRepository
+      .createQueryBuilder('task')
+      .where('task.userId = :userId', { userId });
+
+    if (status) {
+      qb.andWhere('task.status = :status', { status });
+    }
+
+    if (priority) {
+      qb.andWhere('task.priority = :priority', { priority });
+    }
+
+    if (search) {
+      qb.andWhere('task.title ILIKE :search', { search: `%${search}%` });
+    }
+
+    qb.orderBy(`task.${sortBy}`, order);
+    qb.skip((page - 1) * limit).take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   async findOne(userId: string, taskId: string): Promise<Task> {
