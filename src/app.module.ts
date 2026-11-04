@@ -42,13 +42,15 @@ import { UsersModule } from './users/users.module';
   ],
   controllers: [],
   providers: [
+    JwtAuthGuard,
+    ThrottlerGuard,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useExisting: JwtAuthGuard,
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useExisting: ThrottlerGuard,
     },
   ],
 })
