@@ -1,126 +1,107 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Task Manager API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+REST API manajemen tugas dengan autentikasi JWT (access token + refresh token), dibangun dengan NestJS sebagai latihan transisi dari Express.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Fitur
+- Register, login, refresh token (rotation), logout
+- CRUD tugas dengan filter, pencarian, pagination, dan sorting
+- Setiap user hanya bisa mengakses tugasnya sendiri (404, bukan 403)
+- Dokumentasi Swagger, Helmet, dan rate limiting
 
-## Description
+## Tech Stack
+NestJS · TypeScript · PostgreSQL (Supabase) · TypeORM · Passport JWT · argon2 · Swagger · Jest
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Prasyarat
+- Node.js 20 atau lebih baru
+- npm
+- Project Supabase (untuk database PostgreSQL)
 
-## Project setup
+## Menjalankan
+\`\`\`bash
+git clone <url-repo>
+cd task-manager-api
+npm install
+cp .env.example .env     # isi nilai env
+npm run migration:run
+npm run start:dev
+\`\`\`
+Swagger: http://localhost:3000/api/docs
 
-```bash
-$ npm install
-```
+## Environment Variables
+Lihat `.env.example` dan `docs/ARCHITECTURE.md`.
 
-## Compile and run the project
+## Ringkasan Endpoint
+| Method | Endpoint | Keterangan | Publik? |
+|---|---|---|---|
+| POST | `/auth/register` | Daftar (3x/menit) | Ya |
+| POST | `/auth/login` | Login (5x/menit) | Ya |
+| POST | `/auth/refresh` | Perbarui token (rotation) | Perlu refresh token |
+| POST | `/auth/logout` | Logout | Perlu access token |
+| GET | `/tasks` | Daftar tugas (filter, search, pagination, sort) | Perlu access token |
+| POST | `/tasks` | Buat tugas | Perlu access token |
+| GET | `/tasks/:id` | Detail tugas | Perlu access token |
+| PATCH | `/tasks/:id` | Ubah sebagian field tugas | Perlu access token |
+| DELETE | `/tasks/:id` | Hapus tugas (hard delete) | Perlu access token |
 
-```bash
-# development
-$ npm run start
+Detail lengkap: `docs/API_SPEC.md`.
 
-# watch mode
-$ npm run start:dev
+## Contoh Alur Pemakaian
 
-# production mode
-$ npm run start:prod
-```
+**1. Register**
+\`\`\`bash
+curl -X POST http://localhost:3000/auth/register \\
+  -H "Content-Type: application/json" \\
+  -d '{"email":"user@mail.com","password":"password123"}'
+\`\`\`
 
-## Run tests
+**2. Login**
+\`\`\`bash
+curl -X POST http://localhost:3000/auth/login \\
+  -H "Content-Type: application/json" \\
+  -d '{"email":"user@mail.com","password":"password123"}'
+\`\`\`
+Response: `{ "data": { "accessToken": "...", "refreshToken": "..." } }`
 
-```bash
-# unit tests
-$ npm run test
+**3. Buat task (pakai accessToken)**
+\`\`\`bash
+curl -X POST http://localhost:3000/tasks \\
+  -H "Authorization: Bearer <accessToken>" \\
+  -H "Content-Type: application/json" \\
+  -d '{"title":"Belajar NestJS","priority":"HIGH"}'
+\`\`\`
 
-# e2e tests
-$ npm run test:e2e
+**4. Refresh token (pakai refreshToken, bukan accessToken)**
+\`\`\`bash
+curl -X POST http://localhost:3000/auth/refresh \\
+  -H "Authorization: Bearer <refreshToken>"
+\`\`\`
 
-# test coverage
-$ npm run test:cov
-```
+## Testing
+\`\`\`bash
+npm run test       # unit test
+npm run test:e2e   # e2e test (menyentuh database Supabase asli — lihat docs/TESTING.md)
+npm run test:cov   # coverage
+\`\`\`
 
-## Deployment
+## Dokumentasi
+Arsitektur, skema database, alur auth, dan keputusan desain ada di folder `docs/`:
+- `docs/ARCHITECTURE.md` — layering, struktur folder, env variables
+- `docs/DATABASE.md` — skema tabel, migration, koneksi Supabase
+- `docs/API_SPEC.md` — endpoint, DTO, format respons
+- `docs/AUTH_FLOW.md` — alur token, rotation, checklist keamanan
+- `docs/DECISIONS.md` — keputusan desain dan alasannya
+- `docs/TESTING.md` — strategi testing
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+## Keamanan
+- Password dan refresh token di-hash dengan argon2, tidak pernah disimpan/dikembalikan dalam bentuk asli
+- Dua secret JWT berbeda untuk access dan refresh token
+- Refresh token rotation + deteksi reuse (token lama dipakai ulang → semua sesi dipaksa logout)
+- Rate limiting khusus di endpoint auth yang rawan brute force
+- Task milik user lain dijawab 404 (bukan 403) untuk tidak membocorkan keberadaan data
+- Helmet untuk HTTP security headers
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Di Luar Ruang Lingkup
+Verifikasi email, reset password, role/admin, multi-device login, kategori/tag/subtask, soft delete, file upload, WebSocket, frontend. Lihat `docs/PROJECT_OVERVIEW.md` untuk daftar lengkap.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-This project is already instrumented. To connect it, run this and approve the code it prints at [observe.nestjs.com/link](https://observe.nestjs.com/link) - signing up for free if you have no account:
-
-```bash
-$ npx @nestjs/observe link
-```
-
-It writes the app key and secret into `.env` and makes every `nest start` script (`start`, `start:dev`, `start:debug`) load it. In production, set `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment instead.
-
-Or do it by hand: create an application and an API key at [observe.nestjs.com](https://observe.nestjs.com), and set the pair as `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment the app runs in.
-
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Lisensi
+MIT

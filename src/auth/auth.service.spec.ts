@@ -125,9 +125,7 @@ describe('AuthService', () => {
           email: 'notfound@mail.com',
           password: 'password123',
         }),
-      ).rejects.toThrow(
-        new UnauthorizedException('Email atau password salah'),
-      );
+      ).rejects.toThrow(new UnauthorizedException('Email atau password salah'));
     });
 
     it('melempar UnauthorizedException dengan pesan SAMA jika password salah', async () => {
@@ -136,9 +134,7 @@ describe('AuthService', () => {
 
       await expect(
         service.login({ email: 'test@mail.com', password: 'salah' }),
-      ).rejects.toThrow(
-        new UnauthorizedException('Email atau password salah'),
-      );
+      ).rejects.toThrow(new UnauthorizedException('Email atau password salah'));
     });
   });
 

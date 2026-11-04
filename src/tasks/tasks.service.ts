@@ -31,10 +31,7 @@ export class TasksService {
     return this.tasksRepository.save(task);
   }
 
-  async findAll(
-    userId: string,
-    query: QueryTasksDto,
-  ): Promise<PaginatedTasks> {
+  async findAll(userId: string, query: QueryTasksDto): Promise<PaginatedTasks> {
     const { page, limit, status, priority, search, sortBy, order } = query;
 
     const qb = this.tasksRepository

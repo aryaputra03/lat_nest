@@ -22,9 +22,10 @@ function isAlreadyShaped(payload: unknown): payload is Response<unknown> {
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<unknown>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  Response<unknown>
+> {
   intercept(
     context: ExecutionContext,
     next: CallHandler,

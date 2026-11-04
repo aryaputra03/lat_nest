@@ -30,12 +30,11 @@ export class TasksController {
     return this.tasksService.create(user.sub, dto);
   }
 
-  @ApiOperation({ summary: 'Daftar tugas milik user (filter, search, pagination, sort)' })
+  @ApiOperation({
+    summary: 'Daftar tugas milik user (filter, search, pagination, sort)',
+  })
   @Get()
-  findAll(
-    @CurrentUser() user: { sub: string },
-    @Query() query: QueryTasksDto,
-  ) {
+  findAll(@CurrentUser() user: { sub: string }, @Query() query: QueryTasksDto) {
     return this.tasksService.findAll(user.sub, query);
   }
 

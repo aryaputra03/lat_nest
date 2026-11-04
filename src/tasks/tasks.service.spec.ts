@@ -121,9 +121,9 @@ describe('TasksService', () => {
     it('melempar NotFoundException jika task milik user lain', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.findOne(otherUserId, mockTask.id),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(otherUserId, mockTask.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -141,9 +141,9 @@ describe('TasksService', () => {
     it('melempar NotFoundException jika hapus task milik user lain', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.remove(otherUserId, mockTask.id),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.remove(otherUserId, mockTask.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
